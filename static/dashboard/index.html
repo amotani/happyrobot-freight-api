@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HappyRobot Carrier Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              border: "hsl(214.3 31.8% 91.4%)",
+              input: "hsl(214.3 31.8% 91.4%)",
+              ring: "hsl(222.2 84% 4.9%)",
+              background: "hsl(0 0% 100%)",
+              foreground: "hsl(222.2 84% 4.9%)",
+              primary: {
+                DEFAULT: "hsl(222.2 47.4% 11.2%)",
+                foreground: "hsl(210 40% 98%)",
+              },
+              secondary: {
+                DEFAULT: "hsl(210 40% 96%)",
+                foreground: "hsl(222.2 84% 4.9%)",
+              },
+              muted: {
+                DEFAULT: "hsl(210 40% 96%)",
+                foreground: "hsl(215.4 16.3% 46.9%)",
+              },
+              accent: {
+                DEFAULT: "hsl(210 40% 96%)",
+                foreground: "hsl(222.2 84% 4.9%)",
+              },
+              card: {
+                DEFAULT: "hsl(0 0% 100%)",
+                foreground: "hsl(222.2 84% 4.9%)",
+              },
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-background text-foreground">
+    <div class="min-h-screen bg-slate-50/50">
+      <!-- Header -->
+      <header class="border-b bg-white">
+        <div class="container mx-auto px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-2xl font-semibold text-primary">
+                HappyRobot Analytics
+              </h1>
+              <p class="text-sm text-muted-foreground">
+                Carrier engagement dashboard
+              </p>
+            </div>
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center space-x-2">
+                <div class="h-2 w-2 bg-green-500 rounded-full"></div>
+                <span class="text-sm text-muted-foreground" id="api-status"
+                  >Loading...</span
+                >
+              </div>
+              <div class="text-sm text-muted-foreground">
+                <span id="environment">Production</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Loading State -->
+      <div
+        id="loading"
+        class="fixed inset-0 bg-white/80 flex items-center justify-center z-50"
+      >
+        <div class="text-center">
+          <div
+            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"
+          ></div>
+          <p class="mt-2 text-sm text-muted-foreground">Loading analytics...</p>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div id="error" class="container mx-auto px-6 py-8 hidden">
+        <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg
+                class="h-5 w-5 text-red-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-red-800">
+                Error loading dashboard
+              </h3>
+              <p class="mt-1 text-sm text-red-700" id="error-message">
+                Please try again later.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <main id="dashboard-content" class="container mx-auto px-6 py-8 hidden">
+        <!-- Key Metrics -->
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <div class="rounded-lg border bg-card p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-muted-foreground">
+                  Total Calls
+                </p>
+                <p class="text-2xl font-bold" id="total-calls">0</p>
+              </div>
+              <div
+                class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center"
+              >
+                <svg
+                  class="h-4 w-4 text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-lg border bg-card p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-muted-foreground">
+                  Success Rate
+                </p>
+                <p class="text-2xl font-bold" id="success-rate">0%</p>
+              </div>
+              <div
+                class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center"
+              >
+                <svg
+                  class="h-4 w-4 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-lg border bg-card p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-muted-foreground">
+                  Avg. Rounds
+                </p>
+                <p class="text-2xl font-bold" id="avg-rounds">0</p>
+              </div>
+              <div
+                class="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center"
+              >
+                <svg
+                  class="h-4 w-4 text-orange-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-lg border bg-card p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-muted-foreground">
+                  Avg. Rate Diff
+                </p>
+                <p class="text-2xl font-bold" id="avg-rate-diff">$0</p>
+              </div>
+              <div
+                class="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center"
+              >
+                <svg
+                  class="h-4 w-4 text-purple-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid gap-6 md:grid-cols-2 mb-8">
+          <div class="rounded-lg border bg-card p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Call Outcomes</h3>
+              <button
+                onclick="refreshData()"
+                class="text-sm text-muted-foreground hover:text-foreground"
+              >
+                <svg
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="h-64">
+              <canvas id="outcomes-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="rounded-lg border bg-card p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Carrier Sentiment</h3>
+              <span class="text-sm text-muted-foreground">Last 30 days</span>
+            </div>
+            <div class="h-64">
+              <canvas id="sentiment-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div
+          class="flex items-center justify-between text-sm text-muted-foreground border-t pt-6"
+        >
+          <div>
+            <p>Last updated: <span id="last-updated">Never</span></p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <span>Auto-refresh: 30s</span>
+            <button
+              onclick="refreshData()"
+              class="px-3 py-1 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      // Secure configuration - no hardcoded API keys
+      const API_BASE_URL = window.location.origin;
+      let dashboardConfig = null;
+
+      // Fetch dashboard configuration securely
+      async function fetchDashboardConfig() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/dashboard/config`);
+          if (!response.ok) {
+            throw new Error(`Config request failed: ${response.status}`);
+          }
+          dashboardConfig = await response.json();
+          return dashboardConfig;
+        } catch (error) {
+          console.error("Error fetching dashboard config:", error);
+          throw error;
+        }
+      }
+
+      let outcomesChart, sentimentChart;
+
+      async function fetchWithAuth(endpoint) {
+        if (!dashboardConfig) {
+          await fetchDashboardConfig();
+        }
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          headers: {
+            Authorization: `Bearer ${dashboardConfig.api_key}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `API request failed: ${response.status} ${response.statusText}`
+          );
+        }
+
+        return await response.json();
+      }
+
+      async function loadDashboardData() {
+        try {
+          document.getElementById("loading").style.display = "flex";
+          document.getElementById("error").style.display = "none";
+          document.getElementById("dashboard-content").classList.add("hidden");
+
+          // Ensure we have config before making API calls
+          if (!dashboardConfig) {
+            await fetchDashboardConfig();
+          }
+
+          // Fetch analytics data
+          const analyticsData = await fetchWithAuth("/dashboard/analytics");
+          const statusData = await fetchWithAuth("/dashboard/status");
+
+          updateMetrics(analyticsData);
+          updateCharts(analyticsData);
+          updateStatus(statusData);
+
+          document.getElementById("loading").style.display = "none";
+          document
+            .getElementById("dashboard-content")
+            .classList.remove("hidden");
+          document.getElementById("last-updated").textContent =
+            new Date().toLocaleTimeString();
+        } catch (error) {
+          console.error("Error loading dashboard data:", error);
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("error").classList.remove("hidden");
+          document.getElementById("error-message").textContent = error.message;
+        }
+      }
+
+      function updateMetrics(data) {
+        const summary = data.summary;
+
+        document.getElementById("total-calls").textContent =
+          summary.total_calls;
+        document.getElementById("success-rate").textContent =
+          summary.success_rate.toFixed(1) + "%";
+        document.getElementById("avg-rounds").textContent =
+          summary.negotiation_metrics.average_rounds;
+        document.getElementById("avg-rate-diff").textContent =
+          "$" + summary.negotiation_metrics.average_rate_difference;
+      }
+
+      function updateCharts(data) {
+        // Update outcomes chart
+        const outcomesData = data.visualizations.call_outcomes.data;
+        const outcomesCtx = document
+          .getElementById("outcomes-chart")
+          .getContext("2d");
+
+        if (outcomesChart) {
+          outcomesChart.destroy();
+        }
+
+        outcomesChart = new Chart(outcomesCtx, {
+          type: "doughnut",
+          data: {
+            labels: ["Successful", "Failed"],
+            datasets: [
+              {
+                data: [
+                  outcomesData.successful,
+                  outcomesData.total - outcomesData.successful,
+                ],
+                backgroundColor: ["#10b981", "#ef4444"],
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  padding: 20,
+                  usePointStyle: true,
+                },
+              },
+            },
+          },
+        });
+
+        // Update sentiment chart
+        const sentimentData = data.summary.sentiment_breakdown;
+        const sentimentCtx = document
+          .getElementById("sentiment-chart")
+          .getContext("2d");
+
+        if (sentimentChart) {
+          sentimentChart.destroy();
+        }
+
+        const sentimentLabels = Object.keys(sentimentData);
+        const sentimentValues = Object.values(sentimentData);
+
+        sentimentChart = new Chart(sentimentCtx, {
+          type: "bar",
+          data: {
+            labels: sentimentLabels.map(
+              (label) => label.charAt(0).toUpperCase() + label.slice(1)
+            ),
+            datasets: [
+              {
+                label: "Calls",
+                data: sentimentValues,
+                backgroundColor: "#3b82f6",
+                borderRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false,
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1,
+                },
+              },
+            },
+          },
+        });
+      }
+
+      function updateStatus(statusData) {
+        document.getElementById("api-status").textContent = statusData.status;
+        const environment =
+          window.location.hostname === "localhost"
+            ? "Development"
+            : "Production";
+        document.getElementById("environment").textContent = environment;
+      }
+
+      function refreshData() {
+        loadDashboardData();
+      }
+
+      // Load data on page load
+      window.addEventListener("load", loadDashboardData);
+
+      // Auto-refresh every 30 seconds
+      setInterval(loadDashboardData, 30000);
+    </script>
+  </body>
+</html>

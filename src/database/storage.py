@@ -233,8 +233,8 @@ def get_analytics_summary() -> Dict[str, Any]:
             },
             "sentiment_breakdown": dict(sentiment_data),
             "negotiation_metrics": {
-                "average_rounds": negotiation_stats[0] or 0,
-                "average_rate_difference": negotiation_stats[1] or 0
+                "average_rounds": round(negotiation_stats[0], 1) if negotiation_stats[0] else 0,
+                "average_rate_difference": round(negotiation_stats[1], 2) if negotiation_stats[1] else 0
             }
         }
         
